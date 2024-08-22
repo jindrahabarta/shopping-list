@@ -1,113 +1,281 @@
-import Image from "next/image";
+'use client'
 
-export default function Home() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+import React, { useEffect, useState } from 'react'
+import FoodItem from './_components/FoodItem'
+import dbConfig from './_components/dbConfig'
+import { Tooltip } from 'react-tooltip'
+import {
+    addDoc,
+    collection,
+    deleteDoc,
+    doc,
+    getDoc,
+    getFirestore,
+    onSnapshot,
+    orderBy,
+    query,
+    serverTimestamp,
+} from 'firebase/firestore'
+import PlusIcon from './_components/PlusIcon'
+import CrossIcon from './_components/CrossIcon'
+import FavFoodCard from './_components/FavFoodCard'
+import Image from 'next/image'
+import Mrkev from '@/../public/mrkev.png'
 
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+const ShoppingList = () => {
+    const [food, setFood] = useState<string>('')
+    const [count, setCount] = useState<number>(1)
+    const [type, setType] = useState<string>('normal')
+    const [list, setList] = useState<any[]>([])
+    const [favourites, setFavourites] = useState([])
+    const [loading, setLoading] = useState(false)
+    const db = dbConfig()
 
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+    useEffect(() => {
+        // vytvorim query do kolekce todos
+        const q = query(collection(db, 'list'), orderBy('createdAt'))
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
+        // vrati mi aktualni data z databaze, pokud se tam neco zmeni
+        onSnapshot(q, (querySnapshot) => {
+            const list: any = []
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
+            // potrebuju pretransformovat data do pouzitelne podoby a dostat do noveho pole
+            querySnapshot.forEach((doc) => {
+                const item = { ...doc.data(), id: doc.id }
 
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  );
+                list.push(item)
+            })
+
+            // nasetuju pretransfrormovana data
+            setList(list)
+        })
+    }, [])
+
+    useEffect(() => {
+        const q = query(collection(db, 'favourites'), orderBy('createdAt'))
+
+        onSnapshot(q, (querySnapshot) => {
+            const favs: any = []
+
+            // potrebuju pretransformovat data do pouzitelne podoby a dostat do noveho pole
+            querySnapshot.forEach((doc) => {
+                const item = { ...doc.data(), id: doc.id }
+
+                favs.push(item)
+            })
+
+            setFavourites(favs)
+            setLoading(true)
+        })
+    }, [])
+
+    const Send = (e: any) => {
+        e.preventDefault()
+
+        addDoc(collection(db, 'list'), {
+            createdAt: serverTimestamp(),
+            food: food,
+            amount: count,
+            type: type,
+        })
+
+        setFood('')
+        setCount(1)
+        setType('normal')
+    }
+
+    const DeleteAll = () => {
+        list.forEach((item: any) => {
+            deleteDoc(doc(db, 'list', item.id))
+        })
+    }
+
+    const handleDelete = (id: any) => {
+        deleteDoc(doc(db, 'list', id))
+    }
+    const [newFav, setNewFaw] = useState<string>('')
+
+    const addFav = (e: any) => {
+        e.preventDefault()
+
+        addDoc(collection(db, 'favourites'), {
+            createdAt: serverTimestamp(),
+            fav: newFav,
+        })
+
+        setNewFaw('')
+    }
+
+    const favInsert = (props: any) => {
+        setFood(props)
+    }
+    const favDelete = (id: any) => {
+        deleteDoc(doc(db, 'favourites', id))
+    }
+    return (
+        <main className="p-2 relative">
+            <div className="w-full h-screen flex justify-center items-center absolute top-0 left-0 z-0 opacity-20 pointer-events-none">
+                <Image
+                    src={Mrkev}
+                    alt="mrkev"
+                    className=" object-contain h-full z-0"
+                ></Image>
+            </div>
+
+            <h1 className=" mt-4 text-center text-3xl">Nákupní seznam</h1>
+            <div className="w-full flex items-center flex-col sm:flex-row sm:justify-center sm:gap-4 sm:items-start z-20">
+                <div className="p-4 bg-lime-200  sm:w-96 w-full">
+                    <div className=" flex justify-between mb-2  ">
+                        <div className="w-full flex items-center gap-2 overflow-x-auto scrollbar-thin">
+                            {loading ? (
+                                favourites && favourites.length > 0 ? (
+                                    favourites.map((item: any) => (
+                                        <FavFoodCard
+                                            favDelete={favDelete}
+                                            favInsert={favInsert}
+                                            id={item.id}
+                                            key={item.id}
+                                        >
+                                            {item.fav}
+                                        </FavFoodCard>
+                                    ))
+                                ) : (
+                                    <p className="text-xs">
+                                        Přidej si oblíbené ingredience...
+                                    </p>
+                                )
+                            ) : (
+                                <p>Loading...</p>
+                            )}
+                        </div>
+                        <Tooltip
+                            id="add-tooltip"
+                            clickable
+                            className="flex flex-col"
+                        >
+                            <h1>Přidat oblíbené položky:</h1>
+                            <form className="flex gap-2" onSubmit={addFav}>
+                                <input
+                                    className="outline-none text-black"
+                                    type="text"
+                                    required
+                                    maxLength={25}
+                                    onChange={(e) => setNewFaw(e.target.value)}
+                                    value={newFav}
+                                />
+                                <input
+                                    className="hover:cursor-pointer"
+                                    type="submit"
+                                    value="Add"
+                                />
+                            </form>
+                        </Tooltip>
+
+                        <span
+                            data-tooltip-id="add-tooltip"
+                            className="group hover:cursor-pointer hover:fill-lime-700"
+                        >
+                            <PlusIcon></PlusIcon>
+                            <div></div>
+                        </span>
+                    </div>
+                    <form
+                        className="flex flex-col gap-2  outline-none  w-full"
+                        onSubmit={Send}
+                    >
+                        <label htmlFor="potravina" className="pr-2">
+                            Potravina
+                            <input
+                                onChange={(e) => setFood(e.target.value)}
+                                value={food}
+                                maxLength={20}
+                                required
+                                className=" bg-lime-200 outline-none border-b border-black border-dotted ml-2"
+                                id="potravina"
+                                type="text"
+                            />
+                        </label>
+
+                        <label htmlFor="count" className="pr-2">
+                            Množství
+                            <input
+                                value={count}
+                                onChange={(e) => setCount(+e.target.value)}
+                                className=" w-fit  bg-lime-200 outline-none ml-2"
+                                min={1}
+                                max={100}
+                                type="number"
+                                name="count"
+                            />
+                        </label>
+                        <label className="pr-2">
+                            Typ
+                            <select
+                                value={type}
+                                onChange={(e) => setType(e.target.value)}
+                                className="bg-lime-200 outline-none ml-2 "
+                            >
+                                <option value="normal">Normal</option>
+                                <option value="bio">Bio</option>
+                                <option value="vegan">Vegan</option>
+                            </select>
+                        </label>
+
+                        <button
+                            type="submit"
+                            className="group items-center flex self-end hover:text-lime-700 duration-200"
+                        >
+                            <span className="group cursor-pointer">
+                                <PlusIcon></PlusIcon>
+                            </span>
+                            <p>Add</p>
+                        </button>
+                    </form>
+                </div>
+
+                <div className="p-4 border-black border-dotted sm:w-96 sm:mt-0 mt-5 w-full bg-yellow-200">
+                    <h1 className="border-b border-black border-dotted text-center">
+                        Seznam
+                    </h1>
+
+                    <table className="w-full">
+                        <thead>
+                            <tr>
+                                <th className=" text-start">Potravina</th>
+                                <th className=" text-start">Typ</th>
+                                <th className=" text-center">Množství</th>
+                                <th className=" text-center">Mám?</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {list.map((item: any) => (
+                                <FoodItem
+                                    key={item.id}
+                                    id={item.id}
+                                    food={item.food}
+                                    type={item.type}
+                                    count={item.amount}
+                                    handleDelete={handleDelete}
+                                />
+                            ))}
+                        </tbody>
+                    </table>
+                    {list.length > 0 ? (
+                        <div className="flex justify-end">
+                            <button
+                                onClick={DeleteAll}
+                                className="group cursor-pointer items-center flex hover:text-red-500 duration-200"
+                            >
+                                <CrossIcon></CrossIcon>Odstranit položky
+                            </button>
+                        </div>
+                    ) : (
+                        ''
+                    )}
+                </div>
+            </div>
+        </main>
+    )
 }
+
+export default ShoppingList
