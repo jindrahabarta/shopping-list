@@ -1,5 +1,5 @@
-import React from 'react';
-import CrossIcon from './CrossIcon';
+import React from 'react'
+import CrossIcon from './ui/CrossIcon'
 
 const FavFoodCard = ({ children, id, favDelete, favInsert }: any) => {
     return (
@@ -12,7 +12,7 @@ const FavFoodCard = ({ children, id, favDelete, favInsert }: any) => {
                 <CrossIcon onClick={() => favDelete(id, 'list')}></CrossIcon>
             </span>
         </div>
-    );
-};
+    )
+}
 
-export default FavFoodCard;
+export default FavFoodCard
