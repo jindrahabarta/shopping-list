@@ -23,13 +23,13 @@ const SavedLists = () => {
             )}
 
             {data.map((item: any) => (
-                <div className="bg-orange-300 w-96 p-4">
+                <div key={item.id} className="bg-orange-300 w-full sm:w-96 p-4">
                     <table className=" text-center w-full">
                         <th>Potravina</th>
                         <th>Typ</th>
                         <th>Množství</th>
                         {item.list.map((list: any) => (
-                            <tr>
+                            <tr key={list.id}>
                                 <td>{list.food}</td>
                                 <td>{list.type}</td>
                                 <td>{list.amount}</td>
